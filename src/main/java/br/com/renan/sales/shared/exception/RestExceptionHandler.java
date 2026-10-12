@@ -14,6 +14,7 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import java.time.LocalDateTime;
+import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -33,15 +34,26 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<ApiError> handleDataIntegrityViolation() {
+    public ResponseEntity<ApiError> handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        Throwable causa = ex.getMostSpecificCause();
+        boolean chaveDuplicada = causa instanceof SQLException erroSql
+                && "23505".equals(erroSql.getSQLState());
+
+        HttpStatus status = chaveDuplicada
+                ? HttpStatus.CONFLICT
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+        String mensagem = chaveDuplicada
+                ? "Conflito com dados existentes"
+                : "Erro ao salvar os dados";
+
         ApiError erro = new ApiError(
-                HttpStatus.CONFLICT.value(),
-                "Conflito com dados existentes",
+                status.value(),
+                mensagem,
                 LocalDateTime.now(),
                 null
         );
 
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(erro);
+        return ResponseEntity.status(status).body(erro);
     }
 
     @Override
