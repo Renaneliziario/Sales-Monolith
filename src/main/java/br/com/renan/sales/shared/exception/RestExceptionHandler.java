@@ -23,14 +23,17 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ApiError> handleEntityNotFound(EntityNotFoundException ex) {
-        ApiError erro = new ApiError(
-                HttpStatus.NOT_FOUND.value(),
-                ex.getMessage(),
-                LocalDateTime.now(),
-                null
-        );
+        return construirResposta(HttpStatus.NOT_FOUND, ex.getMessage());
+    }
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(erro);
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<ApiError> handleIllegalArgument(IllegalArgumentException ex) {
+        return construirResposta(HttpStatus.BAD_REQUEST, ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<ApiError> handleIllegalState(IllegalStateException ex) {
+        return construirResposta(HttpStatus.CONFLICT, ex.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -46,14 +49,13 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
                 ? "Conflito com dados existentes"
                 : "Erro ao salvar os dados";
 
-        ApiError erro = new ApiError(
-                status.value(),
-                mensagem,
-                LocalDateTime.now(),
-                null
-        );
+        return construirResposta(status, mensagem);
+    }
 
-        return ResponseEntity.status(status).body(erro);
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiError> handleExcecaoNaoTratada(Exception ex) {
+        logger.error("Erro nao tratado", ex);
+        return construirResposta(HttpStatus.INTERNAL_SERVER_ERROR, "Erro interno no servidor");
     }
 
     @Override
@@ -77,5 +79,16 @@ public class RestExceptionHandler extends ResponseEntityExceptionHandler {
         );
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resposta);
+    }
+
+    private ResponseEntity<ApiError> construirResposta(HttpStatus status, String mensagem) {
+        ApiError erro = new ApiError(
+                status.value(),
+                mensagem,
+                LocalDateTime.now(),
+                null
+        );
+
+        return ResponseEntity.status(status).body(erro);
     }
 }
