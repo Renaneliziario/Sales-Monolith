@@ -1,0 +1,10 @@
+target/
+.git/
+.gitignore
+.env
+.env.example
+.idea/
+*.iml
+README.md
+HELP.md
+database/
